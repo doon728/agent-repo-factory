@@ -74,8 +74,28 @@ jobs:
             VIS_FLAG="--private"
           fi
 
+      - name: Create repository from template
+        env:
+          GH_TOKEN: ${{ secrets.REPO_FACTORY_TOKEN }}
+        run: |
+          if [ "${{ steps.parse.outputs.visibility }}" = "PUBLIC" ]; then
+            VIS_FLAG="--public"
+          else
+            VIS_FLAG="--private"
+          fi
+
+      - name: Create repository from template
+        env:
+          GH_TOKEN: ${{ secrets.REPO_FACTORY_TOKEN }}
+        run: |
+          if [ "${{ steps.parse.outputs.visibility }}" = "PUBLIC" ]; then
+            VIS_FLAG="--public"
+          else
+            VIS_FLAG="--private"
+          fi
+
           gh repo create "${{ steps.parse.outputs.repo_name }}" \
             --template "doon728/${{ steps.map.outputs.template }}" \
-            $VIS_FLAG \
-            --yes
-  
+            $VIS_FLAG
+
+

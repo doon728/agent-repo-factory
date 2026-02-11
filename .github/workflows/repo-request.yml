@@ -77,5 +77,5 @@ jobs:
           gh repo create "${{ steps.parse.outputs.repo_name }}" \
             --template "doon728/${{ steps.map.outputs.template }}" \
             $VIS_FLAG \
-            --confirm yes
-
+            --yes
+  

@@ -11,4 +11,7 @@ jobs:
       - name: Print issue title
         run: echo "New issue opened: ${{ github.event.issue.title }}"
 
+      - name: Print issue body
+        run: echo "${{ github.event.issue.body }}"
+
       -

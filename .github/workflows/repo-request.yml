@@ -1,0 +1,14 @@
+name: Repo Request Listener
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  read-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print issue title
+        run: echo "New issue opened: ${{ github.event.issue.title }}"
+
+      -

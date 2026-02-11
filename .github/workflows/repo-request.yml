@@ -5,31 +5,27 @@ on:
     types: [opened]
 
 jobs:
-  read-issue:
+  create-repo:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
 
     steps:
       - name: Parse issue form fields
+        id: parse
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           python - <<'PY'
-          import os, re
+          import os
 
           body = os.environ.get("ISSUE_BODY", "")
           lines = [l.rstrip() for l in body.splitlines()]
 
-          # GitHub issue forms typically render like:
-          # ### Repo name
-          # value
-          # ### Agent topology
-          # value
-          # ### Repo visibility
-          # value
           def get_value(label: str) -> str:
               for i, line in enumerate(lines):
                   if line.strip() == f"### {label}":
-                      # Find next non-empty line after the heading
                       for j in range(i+1, len(lines)):
                           v = lines[j].strip()
                           if v:
@@ -41,15 +37,55 @@ jobs:
           visibility = get_value("Repo visibility")
 
           print(f"repo_name={repo_name}")
-          print(f"folder_layout_template={topology}")
-          print(f"repo_visibility={visibility}")
+          print(f"topology={topology}")
+          print(f"visibility={visibility}")
 
-          # Write to GITHUB_OUTPUT so later steps can reuse them
           out_path = os.environ.get("GITHUB_OUTPUT")
-          if out_path:
-              with open(out_path, "a") as f:
-                  f.write(f"repo_name={repo_name}\n")
-                  f.write(f"folder_layout_template={topology}\n")
-                  f.write(f"repo_visibility={visibility}\n")
+          with open(out_path, "a") as f:
+              f.write(f"repo_name={repo_name}\n")
+              f.write(f"topology={topology}\n")
+              f.write(f"visibility={visibility}\n")
           PY
 
+      - name: Map topology to template
+        id: map
+        run: |
+          case "${{ steps.parse.outputs.topology }}" in
+            SINGLE_AGENT_BASIC)
+              echo "template=tmpl-python-langgraph-single" >> $GITHUB_OUTPUT
+              ;;
+            MULTI_AGENT_SUPERVISOR)
+              echo "template=tmpl-python-langgraph-multi-supervisor" >> $GITHUB_OUTPUT
+              ;;
+            ROUTER_SPECIALIST)
+              echo "template=tmpl-python-langgraph-router-specialist" >> $GITHUB_OUTPUT
+              ;;
+            PIPELINE_WORKFLOW)
+              echo "template=tmpl-python-langgraph-pipeline-workflow" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Create repository from template
+        run: |
+          gh repo create ${{ steps.parse.outputs.repo_name }} \
+            --template doon728/${{ steps.map.outputs.template }} \
+
+      - name: Create repository from template
+        run: |
+          if [ "${{ steps.parse.outputs.visibility }}" = "PUBLIC" ]; then
+            VIS_FLAG="--public"
+          else
+            VIS_FLAG="--private"
+          fi
+
+          gh repo create "${{ steps.parse.outputs.repo_name }}" \
+            --template "doon728/${{ steps.map.outputs.template }}" \
+            $VIS_FLAG \
+            --confirm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          
+            --confirm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

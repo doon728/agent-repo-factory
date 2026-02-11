@@ -8,8 +8,12 @@ jobs:
   read-issue:
     runs-on: ubuntu-latest
     steps:
-      - name: Print issue title
-        run: echo "New issue opened"
+      - name: Show issue title
+        run: echo "${{ github.event.issue.title }}"
 
-      - name: Print issue body
-        run: echo "Issue body received"
+      - name: Show issue body (raw)
+        run: |
+          echo "-----BEGIN BODY-----"
+          echo "${{ github.event.issue.body }}"
+          echo "-----END BODY-----"
+

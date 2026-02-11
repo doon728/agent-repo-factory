@@ -9,9 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Print issue title
-        run: echo "New issue opened: ${{ github.event.issue.title }}"
+        run: echo "New issue opened"
 
       - name: Print issue body
-        run: echo "${{ github.event.issue.body }}"
-
+        run: echo "Issue body received"
       -

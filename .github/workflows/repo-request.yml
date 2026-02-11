@@ -64,13 +64,9 @@ jobs:
               echo "template=tmpl-python-langgraph-pipeline-workflow" >> $GITHUB_OUTPUT
               ;;
           esac
-
       - name: Create repository from template
-        run: |
-          gh repo create ${{ steps.parse.outputs.repo_name }} \
-            --template doon728/${{ steps.map.outputs.template }} \
-
-      - name: Create repository from template
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ "${{ steps.parse.outputs.visibility }}" = "PUBLIC" ]; then
             VIS_FLAG="--public"
@@ -82,5 +78,3 @@ jobs:
             --template "doon728/${{ steps.map.outputs.template }}" \
             $VIS_FLAG \
             --confirm
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

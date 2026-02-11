@@ -13,4 +13,3 @@ jobs:
 
       - name: Print issue body
         run: echo "Issue body received"
-      -

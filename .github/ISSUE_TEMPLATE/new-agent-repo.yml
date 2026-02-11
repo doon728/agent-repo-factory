@@ -1,0 +1,36 @@
+name: "Request New Agent Repo"
+description: "Provision a new agent repository from a standard template"
+title: "New agent repo: <repo_name>"
+labels: ["repo-request"]
+body:
+  - type: input
+    id: repo_name
+    attributes:
+      label: Repo name
+      description: "Exact new repository name (e.g., uc-042-care-mgmt-agent)"
+      placeholder: "uc-001-demo-agent"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: folder_layout_template
+    attributes:
+      label: Agent topology
+      description: "Select the repo template to use"
+      options:
+        - SINGLE_AGENT_BASIC
+        - MULTI_AGENT_SUPERVISOR
+        - ROUTER_SPECIALIST
+        - PIPELINE_WORKFLOW
+    validations:
+      required: true
+
+  - type: dropdown
+    id: repo_visibility
+    attributes:
+      label: Repo visibility
+      options:
+        - PUBLIC
+        - PRIVATE
+    validations:
+      required: true

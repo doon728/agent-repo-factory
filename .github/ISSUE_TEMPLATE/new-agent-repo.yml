@@ -1,36 +1,45 @@
-name: "Request New Agent Repo"
-description: "Provision a new agent repository from a standard template"
+name: Request a new Agent Repo
+description: Create a new repo from standard templates (basic agent or agent+tools)
 title: "New agent repo: <repo_name>"
 labels: ["repo-request"]
+
 body:
   - type: input
     id: repo_name
     attributes:
       label: Repo name
-      description: "Exact new repository name (e.g., uc-042-care-mgmt-agent)"
-      placeholder: "uc-001-demo-agent"
+      description: New repository name to create under your account
+      placeholder: uc-001-care-mgmt-agent
     validations:
       required: true
 
   - type: dropdown
-    id: folder_layout_template
+    id: template_type
     attributes:
-      label: Agent topology
-      description: "Select the repo template to use"
+      label: Template type
+      description: Choose which scaffold to use
       options:
-        - SINGLE_AGENT_BASIC
-        - MULTI_AGENT_SUPERVISOR
-        - ROUTER_SPECIALIST
-        - PIPELINE_WORKFLOW
+        - BASIC_AGENT (tmpl-python-langgraph-single)
+        - AGENT_WITH_TOOLS (tmpl-python-langgraph-agent-tools)
+      default: 1
     validations:
       required: true
 
   - type: dropdown
-    id: repo_visibility
+    id: visibility
     attributes:
       label: Repo visibility
       options:
         - PUBLIC
         - PRIVATE
+      default: 0
     validations:
       required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        **What happens next**
+        - A GitHub Action will read this issue
+        - It will create a new repo from the selected template
+        - It will comment back with the created repo name

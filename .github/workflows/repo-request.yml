@@ -4,15 +4,16 @@ on:
   issues:
     types: [opened]
 
+permissions:
+  contents: read
+
 jobs:
   create-repo:
+    if: contains(github.event.issue.labels.*.name, 'repo-request')
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      actions: write
 
     steps:
-      - name: Parse issue form fields
+      - name: Parse issue fields
         id: parse
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
@@ -28,74 +29,76 @@ jobs:
                   if line.strip() == f"### {label}":
                       for j in range(i+1, len(lines)):
                           v = lines[j].strip()
-                          if v:
+                          if v and not v.startswith("<!--"):
                               return v
               return ""
 
           repo_name = get_value("Repo name")
-          topology = get_value("Agent topology")
+          template_type = get_value("Template type")
           visibility = get_value("Repo visibility")
 
-          print(f"repo_name={repo_name}")
-          print(f"topology={topology}")
-          print(f"visibility={visibility}")
+          # Map template_type -> actual template repo name
+          if template_type.startswith("BASIC_AGENT"):
+              template_repo = "tmpl-python-langgraph-single"
+          elif template_type.startswith("AGENT_WITH_TOOLS"):
+              template_repo = "tmpl-python-langgraph-agent-tools"
+          else:
+              template_repo = ""
 
-          out_path = os.environ.get("GITHUB_OUTPUT")
-          with open(out_path, "a") as f:
+          print("repo_name:", repo_name)
+          print("template_type:", template_type)
+          print("template_repo:", template_repo)
+          print("visibility:", visibility)
+
+          out = os.environ["GITHUB_OUTPUT"]
+          with open(out, "a") as f:
               f.write(f"repo_name={repo_name}\n")
-              f.write(f"topology={topology}\n")
+              f.write(f"template_repo={template_repo}\n")
               f.write(f"visibility={visibility}\n")
           PY
 
-      - name: Map topology to template
-        id: map
+      - name: Validate inputs
         run: |
-          case "${{ steps.parse.outputs.topology }}" in
-            SINGLE_AGENT_BASIC)
-              echo "template=tmpl-python-langgraph-single" >> $GITHUB_OUTPUT
-              ;;
-            MULTI_AGENT_SUPERVISOR)
-              echo "template=tmpl-python-langgraph-multi-supervisor" >> $GITHUB_OUTPUT
-              ;;
-            ROUTER_SPECIALIST)
-              echo "template=tmpl-python-langgraph-router-specialist" >> $GITHUB_OUTPUT
-              ;;
-            PIPELINE_WORKFLOW)
-              echo "template=tmpl-python-langgraph-pipeline-workflow" >> $GITHUB_OUTPUT
-              ;;
-          esac
-      - name: Create repository from template
+          if [ -z "${{ steps.parse.outputs.repo_name }}" ]; then
+            echo "Repo name is empty."
+            exit 1
+          fi
+          if [ -z "${{ steps.parse.outputs.template_repo }}" ]; then
+            echo "Template repo mapping failed. Check Template type field."
+            exit 1
+          fi
+
+      - name: Create repo from template
         env:
-          GH_TOKEN: ${{ secrets.REPO_FACTORY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ steps.parse.outputs.repo_name }}
+          TEMPLATE_REPO: ${{ steps.parse.outputs.template_repo }}
+          VISIBILITY: ${{ steps.parse.outputs.visibility }}
         run: |
-          if [ "${{ steps.parse.outputs.visibility }}" = "PUBLIC" ]; then
+          set -euo pipefail
+
+          if [ "${VISIBILITY}" = "PUBLIC" ]; then
             VIS_FLAG="--public"
           else
             VIS_FLAG="--private"
           fi
 
-      - name: Create repository from template
+          echo "Creating ${OWNER}/${REPO_NAME} from template ${OWNER}/${TEMPLATE_REPO} (${VISIBILITY})"
+
+          # gh is available on ubuntu runner.
+          # Pipe "y" to skip interactive prompt (since --confirm changed across versions).
+          printf "y\n" | gh repo create "${OWNER}/${REPO_NAME}" \
+            --template "${OWNER}/${TEMPLATE_REPO}" \
+            ${VIS_FLAG}
+
+      - name: Comment back on issue
         env:
-          GH_TOKEN: ${{ secrets.REPO_FACTORY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ steps.parse.outputs.repo_name }}
+          TEMPLATE_REPO: ${{ steps.parse.outputs.template_repo }}
         run: |
-          if [ "${{ steps.parse.outputs.visibility }}" = "PUBLIC" ]; then
-            VIS_FLAG="--public"
-          else
-            VIS_FLAG="--private"
-          fi
-
-      - name: Create repository from template
-        env:
-          GH_TOKEN: ${{ secrets.REPO_FACTORY_TOKEN }}
-        run: |
-          if [ "${{ steps.parse.outputs.visibility }}" = "PUBLIC" ]; then
-            VIS_FLAG="--public"
-          else
-            VIS_FLAG="--private"
-          fi
-
-          gh repo create "${{ steps.parse.outputs.repo_name }}" \
-            --template "doon728/${{ steps.map.outputs.template }}" \
-            $VIS_FLAG
-
-
+          gh issue comment ${{ github.event.issue.number }} \
+            --repo ${{ github.repository }} \
+            --body "✅ Created **${OWNER}/${REPO_NAME}** from template **${TEMPLATE_REPO}**"

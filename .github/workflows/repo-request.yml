@@ -94,7 +94,7 @@ jobs:
 
       - name: Comment back on issue
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.REPO_FACTORY_TOKEN }}
           OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ steps.parse.outputs.repo_name }}
           TEMPLATE_REPO: ${{ steps.parse.outputs.template_repo }}

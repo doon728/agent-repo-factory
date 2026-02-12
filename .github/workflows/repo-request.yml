@@ -70,7 +70,7 @@ jobs:
 
       - name: Create repo from template
         env:
-          GH_TOKEN: ${{ secrets.REPO_FACTORY_TOKEN }}
+          REPO_FACTORY_TOKEN: ${{ secrets.github.token }}
           OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ steps.parse.outputs.repo_name }}
           TEMPLATE_REPO: ${{ steps.parse.outputs.template_repo }}
@@ -94,7 +94,7 @@ jobs:
 
       - name: Comment back on issue
         env:
-          GH_TOKEN: ${{ secrets.REPO_FACTORY_TOKEN }}
+          REPO_FACTORY_TOKEN: ${{ secrets.github.token }}
           OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ steps.parse.outputs.repo_name }}
           TEMPLATE_REPO: ${{ steps.parse.outputs.template_repo }}
